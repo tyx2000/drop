@@ -23,6 +23,10 @@
   "files": [
     "dist"
   ],
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  },
   "sideEffects": false,
   "scripts": {
     "build": "node scripts/build.mjs",
