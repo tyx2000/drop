@@ -1,5 +1,5 @@
 {
-  "name": "react-drag-container",
+  "name": "@sprinkle2fog/drop",
   "version": "0.1.0",
   "description": "Headless drag-and-drop containers for React with in-list sorting and cross-container moves.",
   "keywords": [
@@ -10,14 +10,14 @@
     "container"
   ],
   "license": "MIT",
+  "type": "module",
   "main": "./dist/index.js",
-  "module": "./dist/index.mjs",
+  "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
-      "import": "./dist/index.mjs",
-      "require": "./dist/index.js"
+      "import": "./dist/index.js"
     }
   },
   "files": [
@@ -25,7 +25,8 @@
   ],
   "sideEffects": false,
   "scripts": {
-    "build": "tsup",
+    "build": "node scripts/build.mjs",
+    "check:package": "node scripts/check-package.mjs",
     "dev": "tsup --watch",
     "playground": "vite --config vite.config.ts",
     "test": "vitest run",
@@ -36,9 +37,10 @@
     "react": ">=16.8.0"
   },
   "devDependencies": {
-    "@vitejs/plugin-react": "^5.0.4",
+    "@types/node": "^25.4.0",
     "@types/react": "^18.3.2",
     "@types/react-dom": "^18.3.1",
+    "@vitejs/plugin-react": "^5.0.4",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "tsup": "^8.2.4",

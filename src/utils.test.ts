@@ -1,9 +1,11 @@
 import { describe, expect, it } from "vitest";
 import type { DragContainer } from "./types";
 import {
+  getAutoScrollDelta,
   getDistanceToRect,
   getInsertionIndex,
   getKeyboardMoveTarget,
+  resolveDragStartDelay,
   moveItem
 } from "./utils";
 
@@ -197,5 +199,63 @@ describe("getKeyboardMoveTarget", () => {
         () => "horizontal"
       )
     ).toEqual({ containerId: "done", index: 1 });
+  });
+});
+
+describe("getAutoScrollDelta", () => {
+  it("returns negative delta near the leading edge", () => {
+    expect(
+      getAutoScrollDelta(12, 0, 200, {
+        threshold: 40,
+        maxSpeed: 24
+      })
+    ).toBeLessThan(0);
+  });
+
+  it("returns positive delta near the trailing edge", () => {
+    expect(
+      getAutoScrollDelta(194, 0, 200, {
+        threshold: 40,
+        maxSpeed: 24
+      })
+    ).toBeGreaterThan(0);
+  });
+
+  it("returns zero away from the edges", () => {
+    expect(
+      getAutoScrollDelta(100, 0, 200, {
+        threshold: 40,
+        maxSpeed: 24
+      })
+    ).toBe(0);
+  });
+});
+
+describe("resolveDragStartDelay", () => {
+  it("supports a shared numeric delay", () => {
+    expect(resolveDragStartDelay("touch", 180)).toEqual({
+      delay: 180,
+      tolerance: 8
+    });
+  });
+
+  it("resolves pointer-specific delays", () => {
+    expect(
+      resolveDragStartDelay("touch", {
+        touch: 220,
+        mouse: 0,
+        tolerance: 10
+      })
+    ).toEqual({
+      delay: 220,
+      tolerance: 10
+    });
+  });
+
+  it("falls back to zero delay when unset", () => {
+    expect(resolveDragStartDelay("mouse")).toEqual({
+      delay: 0,
+      tolerance: 8
+    });
   });
 });

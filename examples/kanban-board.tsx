@@ -59,24 +59,63 @@ export function KanbanBoardExample() {
             {container.id.toUpperCase()}
           </header>
           <div style={{ display: "grid", gap: 12 }}>
-            {container.items.map((item) => (
-              <article
-                key={item.id}
-                {...dragDrop.getItemProps(container.id, item.id, {
-                  style: {
-                    padding: 14,
-                    borderRadius: 14,
-                    background: "#ffffff",
-                    border: "1px solid #cbd5e1"
-                  }
-                })}
-              >
-                <div style={{ fontWeight: 600 }}>{item.title}</div>
-                <div style={{ marginTop: 6, fontSize: 13, color: "#475569" }}>
-                  {item.assignee}
-                </div>
-              </article>
+            {container.items.map((item, index) => (
+              <React.Fragment key={item.id}>
+                <div
+                  {...dragDrop.getPlaceholderProps(container.id, index, {
+                    activeStyle: {
+                      background: "#0f172a"
+                    }
+                  })}
+                />
+                <article
+                  {...dragDrop.getItemProps(container.id, item.id, {
+                    handleOnly: true,
+                    style: {
+                      padding: 14,
+                      borderRadius: 14,
+                      background: "#ffffff",
+                      border: "1px solid #cbd5e1"
+                    }
+                  })}
+                >
+                  <div
+                    style={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      gap: 12
+                    }}
+                  >
+                    <div style={{ fontWeight: 600 }}>{item.title}</div>
+                    <button
+                      type="button"
+                      {...dragDrop.getHandleProps(container.id, item.id, {
+                        ariaLabel: `Drag ${item.title}`,
+                        style: {
+                          border: 0,
+                          padding: 0,
+                          background: "transparent",
+                          color: "#475569",
+                          font: "inherit"
+                        }
+                      })}
+                    >
+                      ::
+                    </button>
+                  </div>
+                  <div style={{ marginTop: 6, fontSize: 13, color: "#475569" }}>
+                    {item.assignee}
+                  </div>
+                </article>
+              </React.Fragment>
             ))}
+            <div
+              {...dragDrop.getPlaceholderProps(container.id, container.items.length, {
+                activeStyle: {
+                  background: "#0f172a"
+                }
+              })}
+            />
           </div>
         </section>
       ))}

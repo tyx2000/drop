@@ -3,6 +3,20 @@ import type * as React from "react";
 export type DragAxis = "vertical" | "horizontal";
 export type DragIdentifier = string | number;
 
+export interface AutoScrollOptions {
+  enabled?: boolean;
+  threshold?: number;
+  maxSpeed?: number;
+  includeWindow?: boolean;
+}
+
+export interface DragStartDelayOptions {
+  mouse?: number;
+  touch?: number;
+  pen?: number;
+  tolerance?: number;
+}
+
 export interface DragContainer<T> {
   id: string;
   items: T[];
@@ -43,6 +57,8 @@ export interface UseDragDropOptions<T> {
   onDragStart?: (operation: DragDropOperation<T>) => void;
   onDragEnd?: (operation: DragDropOperation<T>) => void;
   getContainerAxis?: (containerId: string) => DragAxis;
+  autoScroll?: boolean | AutoScrollOptions;
+  dragStartDelay?: number | DragStartDelayOptions;
   disabled?: boolean;
 }
 
@@ -52,7 +68,20 @@ export interface GetContainerPropsOptions {
 
 export interface GetItemPropsOptions {
   disabled?: boolean;
+  handleOnly?: boolean;
   style?: React.CSSProperties;
+}
+
+export interface GetPlaceholderPropsOptions {
+  style?: React.CSSProperties;
+  activeStyle?: React.CSSProperties;
+  inactiveStyle?: React.CSSProperties;
+}
+
+export interface GetHandlePropsOptions {
+  disabled?: boolean;
+  style?: React.CSSProperties;
+  ariaLabel?: string;
 }
 
 export interface DragContainerProps {
@@ -63,13 +92,35 @@ export interface DragContainerProps {
 
 export interface DragItemProps {
   ref: (node: HTMLElement | null) => void;
+  onPointerDown?: React.PointerEventHandler<HTMLElement>;
+  onKeyDown?: React.KeyboardEventHandler<HTMLElement>;
+  "data-drag-item-id": string;
+  "data-drag-container-id": string;
+  role?: "button";
+  tabIndex?: number;
+  "aria-grabbed"?: boolean;
+  "data-drag-handle-only"?: boolean;
+  style?: React.CSSProperties;
+}
+
+export interface DragPlaceholderProps {
+  "data-drag-placeholder": "true";
+  "data-drag-placeholder-active": boolean;
+  "aria-hidden": true;
+  style?: React.CSSProperties;
+}
+
+export interface DragHandleProps {
+  ref: (node: HTMLElement | null) => void;
   onPointerDown: React.PointerEventHandler<HTMLElement>;
   onKeyDown: React.KeyboardEventHandler<HTMLElement>;
+  "data-drag-handle": "true";
   "data-drag-item-id": string;
   "data-drag-container-id": string;
   role: "button";
   tabIndex: number;
   "aria-grabbed": boolean;
+  "aria-label"?: string;
   style?: React.CSSProperties;
 }
 
@@ -83,6 +134,17 @@ export interface UseDragDropResult {
     itemId: DragIdentifier,
     options?: GetItemPropsOptions
   ) => DragItemProps;
+  getPlaceholderProps: (
+    containerId: string,
+    index: number,
+    options?: GetPlaceholderPropsOptions
+  ) => DragPlaceholderProps;
+  getHandleProps: (
+    containerId: string,
+    itemId: DragIdentifier,
+    options?: GetHandlePropsOptions
+  ) => DragHandleProps;
+  isPlaceholder: (containerId: string, index: number) => boolean;
   snapshot: DragSnapshot;
   cancelDrag: () => void;
 }

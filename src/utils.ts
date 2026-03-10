@@ -1,4 +1,9 @@
-import type { DragAxis, DragContainer, DragLocation } from "./types";
+import type {
+  DragAxis,
+  DragContainer,
+  DragLocation,
+  DragStartDelayOptions
+} from "./types";
 
 export type KeyboardMoveKey =
   | "ArrowUp"
@@ -13,6 +18,16 @@ export interface RectLike {
   bottom: number;
   width: number;
   height: number;
+}
+
+export interface AutoScrollConfig {
+  threshold: number;
+  maxSpeed: number;
+}
+
+export interface ResolvedDragStartDelay {
+  delay: number;
+  tolerance: number;
 }
 
 export function toItemKey(containerId: string, itemId: string): string {
@@ -155,4 +170,49 @@ export function getKeyboardMoveTarget<T>(
   }
 
   return null;
+}
+
+export function getAutoScrollDelta(
+  pointer: number,
+  start: number,
+  end: number,
+  config: AutoScrollConfig
+): number {
+  const { threshold, maxSpeed } = config;
+
+  if (pointer < start + threshold) {
+    const ratio = (start + threshold - pointer) / threshold;
+    return -Math.min(maxSpeed, Math.ceil(ratio * maxSpeed));
+  }
+
+  if (pointer > end - threshold) {
+    const ratio = (pointer - (end - threshold)) / threshold;
+    return Math.min(maxSpeed, Math.ceil(ratio * maxSpeed));
+  }
+
+  return 0;
+}
+
+export function resolveDragStartDelay(
+  pointerType: string,
+  config?: number | DragStartDelayOptions
+): ResolvedDragStartDelay {
+  if (typeof config === "number") {
+    return {
+      delay: Math.max(0, config),
+      tolerance: 8
+    };
+  }
+
+  return {
+    delay: Math.max(
+      0,
+      pointerType === "touch"
+        ? config?.touch ?? 0
+        : pointerType === "pen"
+          ? config?.pen ?? 0
+          : config?.mouse ?? 0
+    ),
+    tolerance: Math.max(0, config?.tolerance ?? 8)
+  };
 }

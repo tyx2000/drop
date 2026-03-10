@@ -18,13 +18,19 @@ const initialBoard: DragContainer<Task>[] = [
     id: "backlog",
     items: [
       { id: "t-1", title: "Refine package exports", owner: "Ada", points: 3 },
-      { id: "t-2", title: "Add keyboard API", owner: "Lin", points: 5 }
+      { id: "t-2", title: "Add keyboard API", owner: "Lin", points: 5 },
+      { id: "t-4", title: "Document handle mode", owner: "Noa", points: 2 },
+      { id: "t-5", title: "Ship auto scroll", owner: "Ivy", points: 3 },
+      { id: "t-6", title: "Profile large lists", owner: "Moe", points: 5 },
+      { id: "t-7", title: "Record release demo", owner: "Eli", points: 2 }
     ]
   },
   {
     id: "in-progress",
     items: [
-      { id: "t-3", title: "Build playground", owner: "Kai", points: 2 }
+      { id: "t-3", title: "Build playground", owner: "Kai", points: 2 },
+      { id: "t-8", title: "Test touch drag", owner: "Zoe", points: 3 },
+      { id: "t-9", title: "Tune insertion line", owner: "Uma", points: 1 }
     ]
   },
   {
@@ -69,6 +75,10 @@ export function PlaygroundApp() {
   const boardDrag = useDragDrop({
     containers: board,
     getItemId: (item) => item.id,
+    dragStartDelay: {
+      touch: 180,
+      tolerance: 10
+    },
     onDragStart: (operation) => pushLog(`board start ${formatOperation(operation)}`),
     onChange: (nextContainers, operation) => {
       setBoard(nextContainers);
@@ -102,6 +112,13 @@ export function PlaygroundApp() {
           Keyboard: focus an item, press Space or Enter to pick it up, use arrow
           keys to move it, then press Space, Enter, or Escape.
         </p>
+        <p className="helper-copy">
+          Pointer: drag cards near the top or bottom edge of a scrollable column to
+          trigger auto-scroll.
+        </p>
+        <p className="helper-copy">
+          Touch: cards in the board use a short long-press delay before drag starts.
+        </p>
       </section>
 
       <section className="panel">
@@ -126,17 +143,42 @@ export function PlaygroundApp() {
               </header>
 
               <div className="card-list">
-                {container.items.map((item) => (
-                  <section
-                    key={item.id}
-                    className="task-card"
-                    {...boardDrag.getItemProps(container.id, item.id)}
-                  >
-                    <h3>{item.title}</h3>
-                    <p>{item.owner}</p>
-                    <span>{item.points} pts</span>
-                  </section>
+                {container.items.map((item, index) => (
+                  <React.Fragment key={item.id}>
+                    <div
+                      className="placeholder-slot"
+                      {...boardDrag.getPlaceholderProps(container.id, index)}
+                    />
+                    <section
+                      className="task-card"
+                      {...boardDrag.getItemProps(container.id, item.id, {
+                        handleOnly: true
+                      })}
+                    >
+                      <div className="task-topline">
+                        <h3>{item.title}</h3>
+                        <button
+                          type="button"
+                          className="drag-handle"
+                          {...boardDrag.getHandleProps(container.id, item.id, {
+                            ariaLabel: `Drag ${item.title}`
+                          })}
+                        >
+                          ::
+                        </button>
+                      </div>
+                      <p>{item.owner}</p>
+                      <span>{item.points} pts</span>
+                    </section>
+                  </React.Fragment>
                 ))}
+                <div
+                  className="placeholder-slot"
+                  {...boardDrag.getPlaceholderProps(
+                    container.id,
+                    container.items.length
+                  )}
+                />
                 {container.items.length === 0 ? (
                   <div className="empty-state">Drop card here</div>
                 ) : null}
@@ -164,15 +206,40 @@ export function PlaygroundApp() {
             >
               <span className="lane-label">{container.id}</span>
               <div className="tag-wrap">
-                {container.items.map((item) => (
-                  <span
-                    key={item.id}
-                    className="tag-chip"
-                    {...tagDrag.getItemProps(container.id, item.id)}
-                  >
-                    {item.label}
-                  </span>
+                {container.items.map((item, index) => (
+                  <React.Fragment key={item.id}>
+                    <span
+                      className="placeholder-chip"
+                      {...tagDrag.getPlaceholderProps(container.id, index, {
+                        style: {
+                          minHeight: 42
+                        },
+                        activeStyle: {
+                          minWidth: 18,
+                          background: "#fde68a"
+                        }
+                      })}
+                    />
+                    <span
+                      className="tag-chip"
+                      {...tagDrag.getItemProps(container.id, item.id)}
+                    >
+                      {item.label}
+                    </span>
+                  </React.Fragment>
                 ))}
+                <span
+                  className="placeholder-chip"
+                  {...tagDrag.getPlaceholderProps(container.id, container.items.length, {
+                    style: {
+                      minHeight: 42
+                    },
+                    activeStyle: {
+                      minWidth: 18,
+                      background: "#fde68a"
+                    }
+                  })}
+                />
               </div>
             </div>
           ))}

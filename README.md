@@ -15,6 +15,10 @@
 - 同容器排序
 - 跨容器移动
 - 空容器可接收拖拽项目
+- 支持占位线 / 插入提示
+- 支持拖拽手柄
+- 支持边缘自动滚动
+- 支持触摸长按启动和拖拽延迟配置
 - Headless API，UI 完全由业务层控制
 - 支持容器维度配置为纵向或横向
 - 完整 TypeScript 类型导出
@@ -181,6 +185,7 @@ const dragDrop = useDragDrop<Card>({
 
 - `ref`，用于读取项目位置
 - `onPointerDown`，作为拖拽启动入口
+- `onKeyDown`，作为键盘拖拽入口
 - 默认拖动态样式，如 `cursor`、`transform`、`z-index`
 
 ### 5. 在 `onChange` 中回写状态
@@ -194,6 +199,123 @@ const dragDrop = useDragDrop({
   containers,
   getItemId: (item) => item.id,
   onChange: (nextContainers) => setContainers(nextContainers)
+});
+```
+
+### 6. 渲染占位提示
+
+如果你希望在拖拽过程中显示插入线，可以直接使用 `getPlaceholderProps` 或 `isPlaceholder`：
+
+```tsx
+<div style={{ display: "grid", gap: 12 }}>
+  {container.items.map((item, index) => (
+    <React.Fragment key={item.id}>
+      <div
+        {...dragDrop.getPlaceholderProps(container.id, index, {
+          activeStyle: { background: "#0f172a" }
+        })}
+      />
+      <article {...dragDrop.getItemProps(container.id, item.id)}>
+        {item.title}
+      </article>
+    </React.Fragment>
+  ))}
+
+  <div
+    {...dragDrop.getPlaceholderProps(container.id, container.items.length, {
+      activeStyle: { background: "#0f172a" }
+    })}
+  />
+</div>
+```
+
+如果你更想完全自己控制 DOM，也可以只用：
+
+```ts
+dragDrop.isPlaceholder(container.id, index);
+```
+
+### 7. 使用拖拽手柄
+
+如果你不希望整张卡片都可拖，而是只允许从某个 handle 开始拖拽，可以这样接：
+
+```tsx
+<article
+  {...dragDrop.getItemProps(container.id, item.id, {
+    handleOnly: true
+  })}
+>
+  <div>{item.title}</div>
+  <button
+    type="button"
+    {...dragDrop.getHandleProps(container.id, item.id, {
+      ariaLabel: `Drag ${item.title}`
+    })}
+  >
+    ::
+  </button>
+</article>
+```
+
+说明：
+
+- `handleOnly: true` 会让项目本体不再响应拖拽启动
+- 拖拽中的位移样式仍然作用在项目节点本身
+- 键盘拖拽入口也会转移到 handle 上
+
+### 8. 自动滚动
+
+默认会在指针拖拽时启用边缘自动滚动：
+
+- 当指针接近可滚动祖先元素边缘时，会滚动该祖先元素
+- 当指针接近视口边缘时，也会滚动窗口
+- 当前自动滚动只作用于指针拖拽，不作用于键盘拖拽
+
+你也可以显式配置：
+
+```tsx
+const dragDrop = useDragDrop({
+  containers,
+  getItemId: (item) => item.id,
+  autoScroll: {
+    threshold: 56,
+    maxSpeed: 24,
+    includeWindow: true
+  },
+  onChange: setContainers
+});
+```
+
+### 9. 触摸长按启动
+
+如果你希望降低移动端误触拖拽，可以配置 `dragStartDelay`：
+
+```tsx
+const dragDrop = useDragDrop({
+  containers,
+  getItemId: (item) => item.id,
+  dragStartDelay: {
+    touch: 180,
+    tolerance: 10
+  },
+  onChange: setContainers
+});
+```
+
+规则：
+
+- `touch` / `mouse` / `pen` 可以分别配置启动延迟
+- 在延迟窗口内，如果指针移动距离超过 `tolerance`，本次拖拽启动会被取消
+- 这个配置对 item 本体拖拽和 handle 拖拽都生效
+
+或者完全关闭：
+
+```tsx
+const dragDrop = useDragDrop({
+  containers,
+  getItemId: (item) => item.id,
+  autoScroll: false,
+  onChange: setContainers
 });
 ```
 
@@ -254,6 +376,8 @@ type UseDragDropOptions<T> = {
   onDragStart?: (operation: DragDropOperation<T>) => void;
   onDragEnd?: (operation: DragDropOperation<T>) => void;
   getContainerAxis?: (containerId: string) => "vertical" | "horizontal";
+  autoScroll?: boolean | AutoScrollOptions;
+  dragStartDelay?: number | DragStartDelayOptions;
   disabled?: boolean;
 };
 ```
@@ -272,8 +396,56 @@ type UseDragDropOptions<T> = {
   成功释放指针并结束拖拽时触发一次。
 - `getContainerAxis`
   指定某个容器内的排序维度。默认是 `vertical`。
+- `autoScroll`
+  指针拖拽时的自动滚动配置。默认开启。
+- `dragStartDelay`
+  指针按下后延迟多久才真正开始拖拽，可按不同指针类型分别配置。
 - `disabled`
   全局禁用当前 hook 管理的所有拖拽项目。
+
+`AutoScrollOptions` 结构：
+
+```ts
+type AutoScrollOptions = {
+  enabled?: boolean;
+  threshold?: number;
+  maxSpeed?: number;
+  includeWindow?: boolean;
+};
+```
+
+字段说明：
+
+- `enabled`
+  是否启用自动滚动。
+- `threshold`
+  距离边缘多近开始滚动，单位是像素。
+- `maxSpeed`
+  每帧最大滚动步长。
+- `includeWindow`
+  是否允许拖拽时滚动窗口。
+
+`DragStartDelayOptions` 结构：
+
+```ts
+type DragStartDelayOptions = {
+  mouse?: number;
+  touch?: number;
+  pen?: number;
+  tolerance?: number;
+};
+```
+
+字段说明：
+
+- `mouse`
+  鼠标按下后的启动延迟。
+- `touch`
+  触摸按下后的启动延迟。
+- `pen`
+  触控笔按下后的启动延迟。
+- `tolerance`
+  延迟期间允许移动的最大距离，超过就取消本次启动。
 
 ### `DragContainer<T>`
 
@@ -335,6 +507,17 @@ type UseDragDropResult = {
       style?: React.CSSProperties;
     }
   ) => DragItemProps;
+  getPlaceholderProps: (
+    containerId: string,
+    index: number,
+    options?: GetPlaceholderPropsOptions
+  ) => DragPlaceholderProps;
+  getHandleProps: (
+    containerId: string,
+    itemId: string | number,
+    options?: GetHandlePropsOptions
+  ) => DragHandleProps;
+  isPlaceholder: (containerId: string, index: number) => boolean;
   snapshot: DragSnapshot;
   cancelDrag: () => void;
 };
@@ -346,6 +529,12 @@ type UseDragDropResult = {
   生成容器根节点需要绑定的属性。
 - `getItemProps`
   生成每个可拖拽项目需要绑定的属性。
+- `getPlaceholderProps`
+  生成占位元素需要绑定的属性和默认样式，适合直接渲染插入线。
+- `getHandleProps`
+  生成拖拽手柄需要绑定的属性。
+- `isPlaceholder`
+  判断某个容器索引是不是当前占位位置。
 - `snapshot`
   暴露当前拖拽状态，适合做高亮、占位提示、调试面板。
 - `cancelDrag`
@@ -377,13 +566,13 @@ type DragContainerProps = {
 ```ts
 type DragItemProps = {
   ref: (node: HTMLElement | null) => void;
-  onPointerDown: React.PointerEventHandler<HTMLElement>;
-  onKeyDown: React.KeyboardEventHandler<HTMLElement>;
+  onPointerDown?: React.PointerEventHandler<HTMLElement>;
+  onKeyDown?: React.KeyboardEventHandler<HTMLElement>;
   "data-drag-item-id": string;
   "data-drag-container-id": string;
-  role: "button";
-  tabIndex: number;
-  "aria-grabbed": boolean;
+  role?: "button";
+  tabIndex?: number;
+  "aria-grabbed"?: boolean;
   style?: React.CSSProperties;
 };
 ```
@@ -396,6 +585,8 @@ type DragItemProps = {
   当前项目 id。
 - `options.disabled`
   仅禁用当前项目的拖拽能力。
+- `options.handleOnly`
+  设为 `true` 后，项目本体不再作为拖拽启动入口，通常配合 `getHandleProps()` 使用。
 - `options.style`
   追加项目样式。会和内置拖动态样式合并。
 
@@ -405,6 +596,67 @@ type DragItemProps = {
 - `cursor: "grab" | "grabbing"`
 - 拖拽中使用 `transform: translate3d(...)`
 - 拖拽中设置 `position: relative` 和较高 `z-index`
+
+### `getPlaceholderProps(containerId, index, options?)`
+
+返回：
+
+```ts
+type DragPlaceholderProps = {
+  "data-drag-placeholder": "true";
+  "data-drag-placeholder-active": boolean;
+  "aria-hidden": true;
+  style?: React.CSSProperties;
+};
+```
+
+参数说明：
+
+- `containerId`
+  当前占位所属容器 id。
+- `index`
+  占位索引。通常在每个项目前面传当前下标，最后再额外传一次 `items.length`。
+- `options.style`
+  始终附加到占位元素上的样式。
+- `options.activeStyle`
+  仅在当前索引命中占位时附加的样式。
+- `options.inactiveStyle`
+  占位未命中时附加的样式。
+
+默认样式会输出一条轻量插入线；如果你不需要默认样式，也可以直接使用 `isPlaceholder()` 自己渲染。
+
+### `getHandleProps(containerId, itemId, options?)`
+
+返回：
+
+```ts
+type DragHandleProps = {
+  ref: (node: HTMLElement | null) => void;
+  onPointerDown: React.PointerEventHandler<HTMLElement>;
+  onKeyDown: React.KeyboardEventHandler<HTMLElement>;
+  "data-drag-handle": "true";
+  "data-drag-item-id": string;
+  "data-drag-container-id": string;
+  role: "button";
+  tabIndex: number;
+  "aria-grabbed": boolean;
+  "aria-label"?: string;
+  style?: React.CSSProperties;
+};
+```
+
+参数说明：
+
+- `containerId`
+  当前项目所在容器 id。
+- `itemId`
+  当前项目 id。
+- `options.disabled`
+  仅禁用当前 handle 的拖拽能力。
+- `options.ariaLabel`
+  自定义无障碍标签，建议在只显示图标或符号时传入。
+- `options.style`
+  追加 handle 样式。
 
 ### `snapshot`
 
@@ -595,6 +847,38 @@ npm run test:watch
 - 插入索引计算
 - 容器距离计算
 
+## GitHub Actions
+
+仓库现在包含一个工作流：
+
+- `CI and Publish`
+  在 `main` / `master` 分支 push、所有 PR、手动触发和推送 `v*` tag 时执行
+
+其中 `verify` job 会按顺序执行：
+
+- 安装依赖
+- 类型检查
+- 运行测试
+- 构建产物
+
+`publish` job 只会在手动触发且 `publish=true`，或推送 `v*` tag 时执行，发布前会继续执行：
+
+- 检测 npm 包名与版本状态
+- 校验 npm 登录身份
+- 推送到 npm
+
+需要在 GitHub 仓库 Secret 中预留：
+
+- `NPM_TOKEN`
+  npm Automation Token 占位，用于 `npm whoami` 和 `npm publish`
+
+包名检测规则：
+
+- 如果 npm 上还没有这个包名，工作流会标记为可用
+- 如果包名已存在，但当前版本还未发布，工作流允许继续
+- 如果当前版本已存在，工作流会直接失败
+- 手动触发时可通过 `require_name_available=true` 强制要求“包名必须完全未被占用”，适合首次发布前检查
+
 ## 开发
 
 ```bash
@@ -603,3 +887,7 @@ npm run test
 npm run typecheck
 npm run build
 ```
+
+`npm run build` 会输出最终压缩后的 `dist/` 产物，并在终端打印未压缩体积、压缩后体积、`gzip` 体积和 `brotli` 体积的对齐对比表，便于在发版前直接查看 bundle 变化。
+
+当前包只输出 ESM 构建产物，入口文件为 `dist/index.js`。

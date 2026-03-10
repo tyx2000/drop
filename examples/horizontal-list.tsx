@@ -47,24 +47,47 @@ export function HorizontalListExample() {
             }
           })}
         >
-          {container.items.map((item) => (
-            <span
-              key={item.id}
-              {...dragDrop.getItemProps(container.id, item.id, {
-                style: {
-                  display: "inline-flex",
-                  alignItems: "center",
-                  minHeight: 40,
-                  padding: "0 14px",
-                  borderRadius: 999,
-                  background: "#0f172a",
-                  color: "#ffffff"
-                }
-              })}
-            >
-              {item.label}
-            </span>
+          {container.items.map((item, index) => (
+            <React.Fragment key={item.id}>
+              <span
+                {...dragDrop.getPlaceholderProps(container.id, index, {
+                  style: {
+                    minHeight: 40
+                  },
+                  activeStyle: {
+                    minWidth: 16,
+                    background: "#e2e8f0"
+                  }
+                })}
+              />
+              <span
+                {...dragDrop.getItemProps(container.id, item.id, {
+                  style: {
+                    display: "inline-flex",
+                    alignItems: "center",
+                    minHeight: 40,
+                    padding: "0 14px",
+                    borderRadius: 999,
+                    background: "#0f172a",
+                    color: "#ffffff"
+                  }
+                })}
+              >
+                {item.label}
+              </span>
+            </React.Fragment>
           ))}
+          <span
+            {...dragDrop.getPlaceholderProps(container.id, container.items.length, {
+              style: {
+                minHeight: 40
+              },
+              activeStyle: {
+                minWidth: 16,
+                background: "#e2e8f0"
+              }
+            })}
+          />
         </section>
       ))}
     </div>

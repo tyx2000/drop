@@ -130,6 +130,14 @@ body {
 .card-list {
   display: grid;
   gap: 12px;
+  max-height: 360px;
+  overflow: auto;
+  padding-right: 6px;
+}
+
+.placeholder-slot {
+  width: 100%;
+  margin: -2px 0;
 }
 
 .task-card {
@@ -143,6 +151,23 @@ body {
 .task-card h3 {
   margin: 0;
   font-size: 17px;
+}
+
+.task-topline {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.drag-handle {
+  border: 0;
+  padding: 0;
+  background: transparent;
+  color: rgba(248, 250, 252, 0.78);
+  font: inherit;
+  font-size: 20px;
+  line-height: 1;
 }
 
 .task-card p,
@@ -185,6 +210,13 @@ body {
   display: flex;
   flex-wrap: wrap;
   gap: 10px;
+}
+
+.placeholder-chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 10px;
 }
 
 .tag-chip {
